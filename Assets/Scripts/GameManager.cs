@@ -20,7 +20,10 @@ public class GameManager : Singleton<GameManager>
     private bool mainMenu; 
     public GameObject ball;
     public static GameManager instance;
-    private int score; 
+    private int score;
+    public bool area1;
+    public bool area2; 
+
 
     void Start()
     {
@@ -106,8 +109,20 @@ public class GameManager : Singleton<GameManager>
     }
     public void updateCounter()
     {
-        score++;
-        scoreText.text = $"Score = {score}";
-        Debug.Log(score); 
+        if (area1)
+        {
+            score++;
+            Debug.Log("In area 1"); 
+        }
+        else if(area2){
+            score = score + 2;
+            Debug.Log("In area 2"); 
+        }
+        else
+        {
+            score = score + 3;
+            Debug.Log("In area 3");
+        }
+        scoreText.text = $"Score = {score}"; 
     }
 }
