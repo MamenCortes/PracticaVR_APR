@@ -7,12 +7,17 @@ public class GameManager : Singleton<GameManager>
 {
     public Transform ballInitialPos;
     public Transform ballFreeThrow;
+    public Transform tennisInitialPos; 
     public GameObject hoop1;
     public GameObject player;
     public GameObject leftRayTeleport;
     public GameObject ball;
-    private GameObject myEventSystem; 
-    
+    public GameObject tennisBall; 
+    private GameObject myEventSystem;
+
+    //Controlers
+    public GameObject rightRayController;
+    public GameObject rightDirectController; 
 
     //HUD
     public GameObject scoreHUD;
@@ -51,6 +56,7 @@ public class GameManager : Singleton<GameManager>
         }
         gameMode = false;
         ball.SetActive(false);
+        tennisBall.SetActive(false);
         score = 0;
         ballOnHand = false;
         myEventSystem = GameObject.Find("EventSystem");
@@ -69,6 +75,10 @@ public class GameManager : Singleton<GameManager>
         //Timer
         segundos = 0;
         minutos = 5;
+
+        //Controllers
+        rightDirectController.SetActive(true);
+        rightRayController.SetActive(false); 
     }
 
     // Update is called once per frame
@@ -133,13 +143,26 @@ public class GameManager : Singleton<GameManager>
         myEventSystem.GetComponent<UnityEngine.EventSystems.EventSystem>().SetSelectedGameObject(null);
         panel1.SetActive(false);
         panel2.SetActive(true);
-        scoreHUD.SetActive(true); 
+        scoreHUD.SetActive(true);
+        rightDirectController.SetActive(false);
+        rightRayController.SetActive(true); 
 
         scoreText.text = $"Score = {score}";
         if (ball.activeSelf == false) RespawnBall(ballInitialPos);
+        tennisBall.SetActive(true);
+        tennisBall.transform.position = tennisInitialPos.position; 
         RespawnPlayer(ballInitialPos); 
         Debug.Log("Enter practice mode");
         //Añadir más objetos
+    }
+
+    private void exitPracticeMode()
+    {
+        rightDirectController.SetActive(true);
+        rightRayController.SetActive(false);
+        feedBackText.text = "Ready To Play 21?";
+        feedBackText.color = Color.white;
+        tennisBall.SetActive(false); 
     }
     public void backToMainMenu()
     {
@@ -150,8 +173,7 @@ public class GameManager : Singleton<GameManager>
         }
         else
         {
-            feedBackText.text = "Ready To Play 21?";
-            feedBackText.color = Color.white; 
+            exitPracticeMode(); 
         }
 
         panel1.SetActive(true);
