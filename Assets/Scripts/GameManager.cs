@@ -210,7 +210,7 @@ public class GameManager : Singleton<GameManager>
         {
             yield return new WaitForSecondsRealtime(1f);
             segundos--;
-            timeText.color = new Color(186,62,53); 
+            //timeText.color = new Color(186,62,53); 
 
             if (segundos <= 0)
             {
