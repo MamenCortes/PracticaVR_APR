@@ -8,14 +8,14 @@ public class Area2 : MonoBehaviour
     {
         if (other.tag == "MainCamer")
         {
-            GameManager.instance.area2 = false;
+            GameManager.instance.inArea2 = false;
         }
     }
     private void OnTriggerEnter(Collider other)
     {
         if (other.tag == "MainCamera")
         {
-            GameManager.instance.area2 = true;
+            GameManager.instance.inArea2 = true;
         }
     }
 }

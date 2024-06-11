@@ -47,6 +47,7 @@ public class ThrowBall : MonoBehaviour
         pickedUp = false;
         trackingPos.Clear(); 
         ball.GetComponent<Rigidbody>().AddForce(direction * power, ForceMode.Acceleration);
+        GameManager.instance.ballOnHand = false; 
         Debug.Log("Ball thrown"); 
     }
     public virtual void delete()
@@ -55,6 +56,7 @@ public class ThrowBall : MonoBehaviour
     }
     public void ballSelected()
     {
-        pickedUp = true; 
+        pickedUp = true;
+        GameManager.instance.ballOnHand = true; 
     }
 }

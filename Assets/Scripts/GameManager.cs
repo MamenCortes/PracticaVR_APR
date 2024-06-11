@@ -5,116 +5,171 @@ using TMPro;
 
 public class GameManager : Singleton<GameManager>
 {
-    public UnityEngine.XR.InputDevice leftController;
-    public UnityEngine.XR.InputDevice rightController;
     public Transform ballInitialPos;
     public Transform ballFreeThrow;
     public GameObject hoop1;
     public GameObject player;
     public GameObject leftRayTeleport;
-    public TextMeshProUGUI scoreText;
-
-    private int points;
-    private bool gameMode;
-    private bool practiceMode;
-    private bool mainMenu; 
     public GameObject ball;
+    private GameObject myEventSystem; 
+    
+
+    //HUD
+    public GameObject scoreHUD;
+    public GameObject timerHUD; 
+    private TextMeshProUGUI scoreText;
+    private TextMeshProUGUI timeText;
+
+    //UI
+    public TextMeshProUGUI feedBackText;
+    public GameObject panel1;
+    public GameObject panel2; 
+
     public static GameManager instance;
+    private bool gameMode;
     private int score;
-    public bool area1;
-    public bool area2; 
+    private int maxScore = 21; 
+
+    //State variables
+    [HideInInspector] public bool inArea1;
+    [HideInInspector] public bool inArea2;
+    [HideInInspector] public bool ballOnHand;
+
+    //Variables para el temporizador
+    private int minutos;
+    private int segundos;
+ 
 
 
     void Start()
     {
+        //Initial setup
         if(instance == null)
         {
             instance = this;
             DontDestroyOnLoad(gameObject);
         }
         gameMode = false;
-        practiceMode = false;
-        mainMenu = true; 
         ball.SetActive(false);
-        scoreText.text = null; 
-        score = 0; 
+        score = 0;
+        ballOnHand = false;
+        myEventSystem = GameObject.Find("EventSystem");
+
+        //HUD
+        scoreHUD.SetActive(false);
+        timerHUD.SetActive(false); 
+        scoreText = scoreHUD.GetComponentInChildren<TextMeshProUGUI>();
+        timeText = timerHUD.GetComponentInChildren<TextMeshProUGUI>();
+        scoreText.text = null;
+
+        //UI
+        panel1.SetActive(true);
+        panel2.SetActive(false); 
+
+        //Timer
+        segundos = 0;
+        minutos = 5;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(practiceMode)
+        if (gameMode && ballOnHand)
         {
-            
+            leftRayTeleport.SetActive(false);
         }
-        if (gameMode)
+        else
         {
-            
-            //leftRayTeleport.SetActive(false); 
+            leftRayTeleport.SetActive(true); 
+        }
+
+        if(gameMode && score >= maxScore)
+        {
+            backToMainMenu(); 
         }
     }
 
     public void RespawnBall(Transform position)
     {
 
-        ball.transform.position = position.transform.position; 
-        ball.transform.rotation = position.transform.rotation;
+        ball.transform.position = position.position; 
+        ball.transform.rotation = position.rotation;
         ball.SetActive(true);
+    }
+    public void RespawnPlayer(Transform position)
+    {
+        player.transform.position = position.position;
+        player.transform.rotation = position.rotation;
     }
 
     public void enterGameMode()
     {
+        myEventSystem.GetComponent<UnityEngine.EventSystems.EventSystem>().SetSelectedGameObject(null);
+        panel1.SetActive(false);
+        panel2.SetActive(true);
+        scoreHUD.SetActive(true);
+        timerHUD.SetActive(true); 
+
+        StartCoroutine(timer());
         scoreText.text = $"Score = {score}"; 
         gameMode = true;
-        mainMenu = false;
         if (ball.activeSelf == false) RespawnBall(ballFreeThrow);
         hoop1.SetActive(false); //Hide the second hoop
         //Colocar al jugador
-        player.transform.position = ballFreeThrow.position;
-        player.transform.rotation = ballFreeThrow.rotation;
+        RespawnPlayer(ballFreeThrow); 
         Debug.Log("Enter game mode"); 
-        //Start counter 
     }
     public void exitGameMode()
     {
-        gameMode = false; 
-
-        //Stop counter
+        gameMode = false;
+        //ball.SetActive(false); 
+        hoop1.SetActive(true);
+        //RespawnPlayer(ballInitialPos); 
+        endGame(); 
     }
     public void enterPracticeMode()
     {
+
+        myEventSystem.GetComponent<UnityEngine.EventSystems.EventSystem>().SetSelectedGameObject(null);
+        panel1.SetActive(false);
+        panel2.SetActive(true);
+        scoreHUD.SetActive(true); 
+
         scoreText.text = $"Score = {score}";
-        practiceMode = true;
-        mainMenu = false;
         if (ball.activeSelf == false) RespawnBall(ballInitialPos);
-        player.transform.position = ballInitialPos.position;
-        player.transform.rotation = ballInitialPos.rotation;
+        RespawnPlayer(ballInitialPos); 
         Debug.Log("Enter practice mode");
         //Añadir más objetos
     }
-    public void exitPracticeMode()
-    {
-        practiceMode = false;
-        //Stop counter
-    }
     public void backToMainMenu()
     {
-        exitPracticeMode();
-        exitGameMode();
-        mainMenu = true;
-        scoreText.text = null;
-        ball.SetActive(false); 
-        player.transform.position = ballInitialPos.position;
-        player.transform.rotation = ballInitialPos.rotation;
+        myEventSystem.GetComponent<UnityEngine.EventSystems.EventSystem>().SetSelectedGameObject(null);
+        if (gameMode)
+        {
+            exitGameMode();
+        }
+        else
+        {
+            feedBackText.text = "Ready To Play 21?";
+            feedBackText.color = Color.white; 
+        }
+
+        panel1.SetActive(true);
+        panel2.SetActive(false);
+        scoreHUD.SetActive(false);
+        timerHUD.SetActive(false);
+        ball.SetActive(false);
+        RespawnPlayer(ballInitialPos);
+        score = 0; 
     }
     public void updateCounter()
     {
-        if (area1)
+        if (inArea1)
         {
             score++;
             Debug.Log("In area 1"); 
         }
-        else if(area2){
+        else if(inArea2){
             score = score + 2;
             Debug.Log("In area 2"); 
         }
@@ -124,5 +179,45 @@ public class GameManager : Singleton<GameManager>
             Debug.Log("In area 3");
         }
         scoreText.text = $"Score = {score}"; 
+    }
+
+    //Corrutina para controlar el tiempo de juego 
+    IEnumerator timer()
+    {
+        while (minutos >= 0)
+        {
+            yield return new WaitForSecondsRealtime(1f);
+            segundos--;
+            timeText.color = new Color(186,62,53); 
+
+            if (segundos <= 0)
+            {
+                segundos = 59;
+                minutos--;
+                if (minutos == 0)
+                {
+                    timeText.color = Color.red;
+                }
+            }
+            timeText.text = minutos + ":" + segundos;
+            //Debug.Log(minutos + ":" + segundos);
+        }
+
+        backToMainMenu(); 
+    }
+    public void endGame()
+    {
+        StopAllCoroutines();
+        Debug.Log(score); 
+        if (minutos > 0 && segundos > 0 || score >= maxScore)
+        {
+            feedBackText.text = "Winner!!!";
+            feedBackText.color = Color.green;
+        }
+        else
+        {
+            feedBackText.text = "Game over";
+            feedBackText.color = Color.red;
+        }
     }
 }
