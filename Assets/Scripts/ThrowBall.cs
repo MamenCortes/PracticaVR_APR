@@ -2,51 +2,65 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System;
 
 [System.Serializable]
-public class Boundary
-{
-    public float xMin, xMax, zMin, zMax;
-}
+
 
 public class ThrowBall : MonoBehaviour
 {
-    public Boundary bnd;
     public GameObject ball;
     public float power;
-    public GameObject ballPoint;
+    public GameObject ballInitPos;
     public float secsToDestroy;
 
     private GameObject iBall;
+    public static event Action onObjectThrown;
+    private bool pickedUp;
+    private List<Vector3> trackingPos = new List<Vector3>(); 
 
     private void Start()
     {
-        RespawnBall();
-    }
-
-    void RndPos()
-    {
-        transform.position = new Vector3(Random.Range(bnd.xMin, bnd.xMax), transform.position.y, Random.Range(bnd.zMin, bnd.zMax));
+        //RespawnBall();
+        pickedUp = false; 
     }
 
     void RespawnBall()
     {
-        RndPos();
-        iBall = Instantiate(ball, ballPoint.transform.position, ballPoint.transform.rotation);
-        iBall.transform.parent = ballPoint.transform;
+        iBall = Instantiate(ball, ballInitPos.transform.position, ballInitPos.transform.rotation);
+        iBall.transform.parent = ballInitPos.transform;
     }
 
     private void Update()
     {
-        if (iBall == null) RespawnBall();
-
-        if (Input.GetButtonDown("Fire1") && iBall.transform.parent != null)
+        if (pickedUp)
         {
-            iBall.GetComponent<Rigidbody>().isKinematic = false;
-            iBall.transform.parent = null;
-            iBall.GetComponent<Rigidbody>().AddForce(ballPoint.transform.forward * power, ForceMode.Acceleration);
-
-            Destroy(iBall, secsToDestroy);
+            if (trackingPos.Count > 15)
+            {
+                trackingPos.RemoveAt(0); 
+            }
+            trackingPos.Add(transform.position);
+            Debug.Log(trackingPos);
         }
+    }
+
+    public virtual void objectThrown()
+    {
+        onObjectThrown?.Invoke();
+        Vector3 direction = trackingPos[trackingPos.Count - 1] - trackingPos[0];
+        ball.GetComponent<Rigidbody>().isKinematic = false;
+        ball.transform.parent = null;
+        pickedUp = false;
+        trackingPos.Clear(); 
+        ball.GetComponent<Rigidbody>().AddForce(direction * power, ForceMode.Acceleration);
+        Debug.Log("Ball thrown"); 
+    }
+    public virtual void delete()
+    {
+        Destroy(this.gameObject);
+    }
+    public void ballSelected()
+    {
+        pickedUp = true; 
     }
 }
