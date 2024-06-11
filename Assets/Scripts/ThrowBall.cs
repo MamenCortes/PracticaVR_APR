@@ -25,12 +25,6 @@ public class ThrowBall : MonoBehaviour
         pickedUp = false; 
     }
 
-    void RespawnBall()
-    {
-        iBall = Instantiate(ball, ballInitPos.transform.position, ballInitPos.transform.rotation);
-        iBall.transform.parent = ballInitPos.transform;
-    }
-
     private void Update()
     {
         if (pickedUp)
